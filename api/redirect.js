@@ -1,35 +1,35 @@
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, get, update, increment } from "firebase/database";
+import admin from "firebase-admin";
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyCVqss1TjFhMVbGWYOADrTeekKfwqC-94I",
-  authDomain: "tgf-c655b.firebaseapp.com",
-  databaseURL: "https://tgf-c655b-default-rtdb.firebaseio.com",
-  projectId: "tgf-c655b",
-  storageBucket: "tgf-c655b.appspot.com",
-  messagingSenderId: "328093296287",
-  appId: "1:328093296287:web:59b92b698be8ff1919e4aa"
-};
+// Firebase Admin initialization
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    databaseURL: "https://tgf-c655b-default-rtdb.firebaseio.com"
+  });
+}
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db = admin.database();
 
 export default async function handler(req, res) {
-  const code = req.query.code;
-  if (!code) return res.status(400).send("No code provided");
+  try {
+    const code = req.query.code;
+    if (!code) return res.status(400).send("No code provided");
 
-  const urlRef = ref(db, 'shortUrls/' + code);
-  const snapshot = await get(urlRef);
+    const urlRef = db.ref('shortUrls/' + code);
+    const snapshot = await urlRef.once('value');
 
-  if (snapshot.exists()) {
+    if (!snapshot.exists()) return res.status(404).send("Short URL not found");
+
     const data = snapshot.val();
-    // increment clicks
-    update(urlRef, { clicks: increment(1) });
-    // redirect
+    // Increment clicks
+    await urlRef.update({ clicks: (data.clicks || 0) + 1 });
+
+    // Redirect
     res.writeHead(302, { Location: data.originalUrl });
     res.end();
-  } else {
-    res.status(404).send("Short URL not found");
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
   }
 }
