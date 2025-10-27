@@ -1,6 +1,5 @@
-// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, set, get, child, update, increment, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, set, get, onValue, update, increment } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -10,11 +9,9 @@ const firebaseConfig = {
   projectId: "tgf-c655b",
   storageBucket: "tgf-c655b.appspot.com",
   messagingSenderId: "328093296287",
-  appId: "1:328093296287:web:59b92b698be8ff1919e4aa",
-  measurementId: "G-C2CZP823QK"
+  appId: "1:328093296287:web:59b92b698be8ff1919e4aa"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -32,7 +29,7 @@ function generateCode(length = 6){
   return code;
 }
 
-// Create short URL
+// Shorten URL
 shortBtn.addEventListener("click", async ()=>{
   const longUrl = longUrlInput.value.trim();
   if(!longUrl) return alert("URL লিখুন!");
@@ -47,7 +44,7 @@ shortBtn.addEventListener("click", async ()=>{
   loadUrls();
 });
 
-// Load URLs from Firebase
+// Load URLs
 function loadUrls(){
   urlTable.innerHTML = "";
   const dbRef = ref(db, "shortUrls");
@@ -59,27 +56,12 @@ function loadUrls(){
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${code}</td>
-        <td><a href="#" onclick="redirectUrl('${code}')">${window.location.origin}/${code}</a></td>
+        <td><a href="/${code}" target="_blank">${window.location.origin}/${code}</a></td>
         <td>${data.clicks}</td>
       `;
       urlTable.appendChild(tr);
     });
   });
-}
-
-// Redirect & increment clicks
-window.redirectUrl = async function(code){
-  const urlRef = ref(db, "shortUrls/" + code);
-  const snapshot = await get(urlRef);
-  if(snapshot.exists()){
-    const data = snapshot.val();
-    // Increment clicks
-    update(urlRef, { clicks: increment(1) });
-    // Redirect
-    window.location.href = data.originalUrl;
-  } else {
-    alert("Invalid Short URL!");
-  }
 }
 
 loadUrls();
